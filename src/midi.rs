@@ -1,7 +1,7 @@
 //! This module contains data types to represent the different messages that can be sent over MIDI.
 
 /// An enum with variants for all possible Midi messages.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum MidiMessage {
     // Channel voice messages
     /// Note Off message
