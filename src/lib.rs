@@ -2,4 +2,6 @@
 #[warn(missing_debug_implementations, missing_docs)]
 mod midi;
 
-pub use midi::{status, Channel, Control, MidiMessage, Note, Program, RenderError};
+pub use midi::{
+    status, Channel, Control, MidiMessage, Note, Program, RenderError, Value14, Value7,
+};

@@ -214,6 +214,7 @@ pub struct Note(u8);
 
 impl From<u8> for Note {
     fn from(note: u8) -> Self {
+        assert!(note <= 127);
         Note(note)
     }
 }
@@ -231,6 +232,7 @@ pub struct Channel(u8);
 
 impl From<u8> for Channel {
     fn from(channel: u8) -> Self {
+        assert!(channel <= 15);
         Channel(channel)
     }
 }
@@ -247,6 +249,7 @@ pub struct Control(u8);
 
 impl From<u8> for Control {
     fn from(control: u8) -> Self {
+        assert!(control <= 127);
         Control(control)
     }
 }
@@ -263,6 +266,7 @@ pub struct Program(u8);
 
 impl From<u8> for Program {
     fn from(value: u8) -> Self {
+        assert!(value <= 127);
         Program(value)
     }
 }
