@@ -98,7 +98,9 @@ pub enum MidiMessage {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+/// Errors rendering
 pub enum RenderError {
+    ///Input buffer wasn't long enough to render message
     BufferTooShort,
 }
 
@@ -395,6 +397,30 @@ impl Into<u8> for QuarterFrame {
 mod test {
     use super::*;
 
+    const TEST_1BYTE: [MidiMessage; 7] = [
+        MidiMessage::TuneRequest,
+        MidiMessage::TimingClock,
+        MidiMessage::Start,
+        MidiMessage::Continue,
+        MidiMessage::Stop,
+        MidiMessage::ActiveSensing,
+        MidiMessage::Reset,
+    ];
+    const TEST_2BYTE: [MidiMessage; 4] = [
+        MidiMessage::ProgramChange(Channel(0), Program(0)),
+        MidiMessage::ChannelPressure(Channel(1), Value7(2)),
+        MidiMessage::QuarterFrame(QuarterFrame(23)),
+        MidiMessage::SongSelect(Value7(3)),
+    ];
+    const TEST_3BYTE: [MidiMessage; 6] = [
+        MidiMessage::NoteOff(Channel(2), Note(3), Value7(1)),
+        MidiMessage::NoteOn(Channel(3), Note(120), Value7(120)),
+        MidiMessage::KeyPressure(Channel(3), Note(120), Value7(1)),
+        MidiMessage::ControlChange(Channel(5), Control(23), Value7(23)),
+        MidiMessage::PitchBendChange(Channel(15), Value14(23, 23)),
+        MidiMessage::SongPositionPointer(Value14(0, 0)),
+    ];
+
     #[test]
     fn should_combine_7_bit_vals_into_14() {
         let val: Value14 = (0b01010101u8, 0b01010101u8).into();
@@ -405,5 +431,79 @@ mod test {
     fn should_split_14_bit_val_into_7() {
         let val: Value14 = 0b0011001100110011u16.into();
         assert_eq!((0b01100110u8, 0b00110011u8), val.into())
+    }
+
+    #[test]
+    fn render_err() {
+        let mut buf0: [u8; 0] = [];
+        let mut buf1 = [0];
+        let mut buf2 = [0, 0];
+        for v in TEST_1BYTE.iter() {
+            assert_eq!(
+                Err(RenderError::BufferTooShort),
+                v.render(&mut buf0),
+                "{:?}",
+                v
+            );
+        }
+
+        for v in TEST_2BYTE {
+            assert_eq!(
+                Err(RenderError::BufferTooShort),
+                v.render(&mut buf0),
+                "{:?}",
+                v
+            );
+            assert_eq!(
+                Err(RenderError::BufferTooShort),
+                v.render(&mut buf1),
+                "{:?}",
+                v
+            );
+        }
+
+        for v in TEST_3BYTE {
+            assert_eq!(
+                Err(RenderError::BufferTooShort),
+                v.render(&mut buf0),
+                "{:?}",
+                v
+            );
+            assert_eq!(
+                Err(RenderError::BufferTooShort),
+                v.render(&mut buf1),
+                "{:?}",
+                v
+            );
+            assert_eq!(
+                Err(RenderError::BufferTooShort),
+                v.render(&mut buf2),
+                "{:?}",
+                v
+            );
+        }
+    }
+
+    #[test]
+    fn render_ok() {
+        let mut buf1 = [0];
+        let mut buf2 = [0, 0];
+        let mut buf3 = [0, 0, 0];
+        let mut buf100 = [0; 100];
+        for v in TEST_1BYTE.iter() {
+            assert_eq!(Ok(()), v.render(&mut buf1), "{:?}", v);
+            assert_eq!(Ok(()), v.render(&mut buf2), "{:?}", v);
+            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+        }
+
+        for v in TEST_2BYTE {
+            assert_eq!(Ok(()), v.render(&mut buf2), "{:?}", v);
+            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+        }
+
+        for v in TEST_3BYTE {
+            assert_eq!(Ok(()), v.render(&mut buf3), "{:?}", v);
+            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+        }
     }
 }
