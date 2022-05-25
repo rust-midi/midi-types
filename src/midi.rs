@@ -156,14 +156,14 @@ impl MidiMessage {
         chan: &C,
         d0: &T0,
         d1: &T1,
-    ) -> Result<(), RenderError> {
+    ) -> Result<usize, RenderError> {
         if buf.len() >= 3 {
             let chan: u8 = (*chan).into();
             let status = status | chan;
             for (o, i) in buf.iter_mut().zip(&[status, (*d0).into(), (*d1).into()]) {
                 *o = *i;
             }
-            Ok(())
+            Ok(3)
         } else {
             Err(RenderError::BufferTooShort)
         }
@@ -175,31 +175,31 @@ impl MidiMessage {
         status: u8,
         chan: &C,
         d0: &T0,
-    ) -> Result<(), RenderError> {
+    ) -> Result<usize, RenderError> {
         if buf.len() >= 2 {
             let chan: u8 = (*chan).into();
             let status = status | chan;
             for (o, i) in buf.iter_mut().zip(&[status, (*d0).into()]) {
                 *o = *i;
             }
-            Ok(())
+            Ok(2)
         } else {
             Err(RenderError::BufferTooShort)
         }
     }
 
     //helper to render 1 byte messages
-    fn chan1byte(buf: &mut [u8], status: u8) -> Result<(), RenderError> {
+    fn chan1byte(buf: &mut [u8], status: u8) -> Result<usize, RenderError> {
         if buf.len() >= 1 {
             buf[0] = status;
-            Ok(())
+            Ok(1)
         } else {
             Err(RenderError::BufferTooShort)
         }
     }
 
-    /// Render into a raw byte buffer
-    pub fn render(&self, buf: &mut [u8]) -> Result<(), RenderError> {
+    /// Render into a raw byte buffer, return the number of bytes rendered
+    pub fn render(&self, buf: &mut [u8]) -> Result<usize, RenderError> {
         match self {
             Self::NoteOff(c, n, v) => Self::chan3byte(buf, NOTE_OFF, c, n, v),
             Self::NoteOn(c, n, v) => Self::chan3byte(buf, NOTE_ON, c, n, v),
@@ -607,19 +607,19 @@ mod test {
         let mut buf3 = [0, 0, 0];
         let mut buf100 = [0; 100];
         for v in TEST_1BYTE.iter() {
-            assert_eq!(Ok(()), v.render(&mut buf1), "{:?}", v);
-            assert_eq!(Ok(()), v.render(&mut buf2), "{:?}", v);
-            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(1), v.render(&mut buf1), "{:?}", v);
+            assert_eq!(Ok(1), v.render(&mut buf2), "{:?}", v);
+            assert_eq!(Ok(1), v.render(&mut buf100), "{:?}", v);
         }
 
         for v in TEST_2BYTE {
-            assert_eq!(Ok(()), v.render(&mut buf2), "{:?}", v);
-            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(2), v.render(&mut buf2), "{:?}", v);
+            assert_eq!(Ok(2), v.render(&mut buf100), "{:?}", v);
         }
 
         for v in TEST_3BYTE {
-            assert_eq!(Ok(()), v.render(&mut buf3), "{:?}", v);
-            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(3), v.render(&mut buf3), "{:?}", v);
+            assert_eq!(Ok(3), v.render(&mut buf100), "{:?}", v);
         }
     }
 
@@ -630,25 +630,25 @@ mod test {
         let mut buf3 = [0, 0, 0];
         let mut buf100 = [0; 100];
         for v in TEST_1BYTE.iter() {
-            assert_eq!(Ok(()), v.render(&mut buf1), "{:?}", v);
+            assert_eq!(Ok(1), v.render(&mut buf1), "{:?}", v);
             assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf1.as_slice()));
-            assert_eq!(Ok(()), v.render(&mut buf2), "{:?}", v);
+            assert_eq!(Ok(1), v.render(&mut buf2), "{:?}", v);
             assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf2.as_slice()));
-            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(1), v.render(&mut buf100), "{:?}", v);
             assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf100.as_slice()));
         }
 
         for v in TEST_2BYTE {
-            assert_eq!(Ok(()), v.render(&mut buf2), "{:?}", v);
+            assert_eq!(Ok(2), v.render(&mut buf2), "{:?}", v);
             assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf2.as_slice()));
-            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(2), v.render(&mut buf100), "{:?}", v);
             assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf100.as_slice()));
         }
 
         for v in TEST_3BYTE {
-            assert_eq!(Ok(()), v.render(&mut buf3), "{:?}", v);
+            assert_eq!(Ok(3), v.render(&mut buf3), "{:?}", v);
             assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf3.as_slice()));
-            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(3), v.render(&mut buf100), "{:?}", v);
             assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf100.as_slice()));
         }
     }
