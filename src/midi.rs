@@ -25,6 +25,16 @@ pub mod status {
     pub const SYSEX_END: u8 = 0xF7;
 }
 
+const NOTE_OFF_END: u8 = NOTE_OFF + 0x0F;
+const NOTE_ON_END: u8 = NOTE_ON + 0x0F;
+const KEY_PRESSURE_END: u8 = KEY_PRESSURE + 0x0F;
+const CONTROL_CHANGE_END: u8 = CONTROL_CHANGE + 0x0F;
+const PITCH_BEND_CHANGE_END: u8 = PITCH_BEND_CHANGE + 0x0F;
+const PROGRAM_CHANGE_END: u8 = PROGRAM_CHANGE + 0x0F;
+const CHANNEL_PRESSURE_END: u8 = CHANNEL_PRESSURE + 0x0F;
+
+use core::convert::TryFrom;
+
 use status::*;
 
 /// An enum with variants for all possible Midi messages.
@@ -102,6 +112,17 @@ pub enum MidiMessage {
 pub enum RenderError {
     ///Input buffer wasn't long enough to render message
     BufferTooShort,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+/// Errors parsing
+pub enum ParseError {
+    ///Input buffer wasn't long enough to parse anything
+    BufferTooShort,
+    ///Couldn't find a valid message
+    MessageNotFound,
+    ///Partial valid message but
+    PartialData,
 }
 
 impl MidiMessage {
@@ -203,6 +224,97 @@ impl MidiMessage {
             Self::Stop => Self::chan1byte(buf, STOP),
             Self::ActiveSensing => Self::chan1byte(buf, ACTIVE_SENSING),
             Self::Reset => Self::chan1byte(buf, RESET),
+        }
+    }
+
+    //parse helper guard
+    fn check_len<F: Fn() -> Result<Self, ParseError>>(
+        buf: &[u8],
+        len: usize,
+        func: F,
+    ) -> Result<Self, ParseError> {
+        if buf.len() >= len {
+            func()
+        } else {
+            Err(ParseError::BufferTooShort)
+        }
+    }
+
+    fn parse(buf: &[u8]) -> Result<Self, ParseError> {
+        let chan = |status: u8| -> Channel { Channel::from(status & 0x0F) };
+        match buf[0] {
+            //1 byte
+            TUNE_REQUEST => Ok(Self::TuneRequest),
+            TIMING_CLOCK => Ok(Self::TimingClock),
+            START => Ok(Self::Start),
+            CONTINUE => Ok(Self::Continue),
+            STOP => Ok(Self::Stop),
+            ACTIVE_SENSING => Ok(Self::ActiveSensing),
+            RESET => Ok(Self::Reset),
+
+            //2 byte
+            s @ PROGRAM_CHANGE..=PROGRAM_CHANGE_END => Self::check_len(buf, 2, || {
+                Ok(Self::ProgramChange(chan(s), Program::from(buf[1])))
+            }),
+            s @ CHANNEL_PRESSURE..=CHANNEL_PRESSURE_END => Self::check_len(buf, 2, || {
+                Ok(Self::ChannelPressure(chan(s), Value7::from(buf[1])))
+            }),
+            QUARTER_FRAME => Self::check_len(buf, 2, || {
+                Ok(Self::QuarterFrame(QuarterFrame::from(buf[1])))
+            }),
+            SONG_SELECT => Self::check_len(buf, 2, || Ok(Self::SongSelect(Value7::from(buf[1])))),
+
+            //3 byte
+            s @ NOTE_OFF..=NOTE_OFF_END => Self::check_len(buf, 3, || {
+                Ok(Self::NoteOff(
+                    chan(s),
+                    Note::from(buf[1]),
+                    Value7::from(buf[2]),
+                ))
+            }),
+            s @ NOTE_ON..=NOTE_ON_END => Self::check_len(buf, 3, || {
+                Ok(Self::NoteOn(
+                    chan(s),
+                    Note::from(buf[1]),
+                    Value7::from(buf[2]),
+                ))
+            }),
+            s @ KEY_PRESSURE..=KEY_PRESSURE_END => Self::check_len(buf, 3, || {
+                Ok(Self::KeyPressure(
+                    chan(s),
+                    Note::from(buf[1]),
+                    Value7::from(buf[2]),
+                ))
+            }),
+            s @ CONTROL_CHANGE..=CONTROL_CHANGE_END => Self::check_len(buf, 3, || {
+                Ok(Self::ControlChange(
+                    chan(s),
+                    Control::from(buf[1]),
+                    Value7::from(buf[2]),
+                ))
+            }),
+            s @ PITCH_BEND_CHANGE..=PITCH_BEND_CHANGE_END => Self::check_len(buf, 3, || {
+                Ok(Self::PitchBendChange(
+                    chan(s),
+                    Value14::from((buf[1], buf[2])),
+                ))
+            }),
+            SONG_POSITION_POINTER => Self::check_len(buf, 3, || {
+                Ok(Self::SongPositionPointer(Value14::from((buf[1], buf[2]))))
+            }),
+
+            _ => Err(ParseError::MessageNotFound),
+        }
+    }
+}
+
+impl TryFrom<&[u8]> for MidiMessage {
+    type Error = ParseError;
+    fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
+        if buf.len() == 0 {
+            Err(ParseError::BufferTooShort)
+        } else {
+            Self::parse(buf)
         }
     }
 }
@@ -508,6 +620,36 @@ mod test {
         for v in TEST_3BYTE {
             assert_eq!(Ok(()), v.render(&mut buf3), "{:?}", v);
             assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+        }
+    }
+
+    #[test]
+    fn parse_rendered() {
+        let mut buf1 = [0];
+        let mut buf2 = [0, 0];
+        let mut buf3 = [0, 0, 0];
+        let mut buf100 = [0; 100];
+        for v in TEST_1BYTE.iter() {
+            assert_eq!(Ok(()), v.render(&mut buf1), "{:?}", v);
+            assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf1.as_slice()));
+            assert_eq!(Ok(()), v.render(&mut buf2), "{:?}", v);
+            assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf2.as_slice()));
+            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf100.as_slice()));
+        }
+
+        for v in TEST_2BYTE {
+            assert_eq!(Ok(()), v.render(&mut buf2), "{:?}", v);
+            assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf2.as_slice()));
+            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf100.as_slice()));
+        }
+
+        for v in TEST_3BYTE {
+            assert_eq!(Ok(()), v.render(&mut buf3), "{:?}", v);
+            assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf3.as_slice()));
+            assert_eq!(Ok(()), v.render(&mut buf100), "{:?}", v);
+            assert_eq!(Ok(v.clone()), MidiMessage::try_from(buf100.as_slice()));
         }
     }
 }
