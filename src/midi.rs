@@ -1,5 +1,32 @@
 //! This module contains data types to represent the different messages that can be sent over MIDI.
 
+#[allow(missing_docs)]
+/// Status byte constants
+pub mod status {
+    pub const NOTE_OFF: u8 = 0x80;
+    pub const NOTE_ON: u8 = 0x90;
+    pub const KEY_PRESSURE: u8 = 0xA0;
+    pub const CONTROL_CHANGE: u8 = 0xB0;
+    pub const PITCH_BEND_CHANGE: u8 = 0xE0;
+    pub const SONG_POSITION_POINTER: u8 = 0xF2;
+    pub const PROGRAM_CHANGE: u8 = 0xC0;
+    pub const CHANNEL_PRESSURE: u8 = 0xD0;
+    pub const QUARTER_FRAME: u8 = 0xF1;
+    pub const SONG_SELECT: u8 = 0xF3;
+    pub const TUNE_REQUEST: u8 = 0xF6;
+    pub const TIMING_CLOCK: u8 = 0xF8;
+    pub const START: u8 = 0xFA;
+    pub const CONTINUE: u8 = 0xFB;
+    pub const STOP: u8 = 0xFC;
+    pub const ACTIVE_SENSING: u8 = 0xFE;
+    pub const RESET: u8 = 0xFF;
+
+    pub const SYSEX_START: u8 = 0xF0;
+    pub const SYSEX_END: u8 = 0xF7;
+}
+
+use status::*;
+
 /// An enum with variants for all possible Midi messages.
 #[derive(Debug, PartialEq, Clone)]
 pub enum MidiMessage {
@@ -68,6 +95,114 @@ pub enum MidiMessage {
 
     /// Reset message
     Reset,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum RenderError {
+    BufferTooShort,
+}
+
+impl MidiMessage {
+    /// The length of the rendered data, including the status
+    pub fn len(&self) -> usize {
+        match self {
+            Self::NoteOff(..)
+            | Self::NoteOn(..)
+            | Self::KeyPressure(..)
+            | Self::ControlChange(..)
+            | Self::PitchBendChange(..)
+            | Self::SongPositionPointer(..) => 3,
+            Self::ProgramChange(..)
+            | Self::ChannelPressure(..)
+            | Self::QuarterFrame(..)
+            | Self::SongSelect(..) => 2,
+            Self::TuneRequest
+            | Self::TimingClock
+            | Self::Start
+            | Self::Continue
+            | Self::Stop
+            | Self::ActiveSensing
+            | Self::Reset => 1,
+        }
+    }
+
+    //helper to render 3 byte messages
+    fn chan3byte<T0: Into<u8> + Copy, T1: Into<u8> + Copy, C: Into<u8> + Copy>(
+        buf: &mut [u8],
+        status: u8,
+        chan: &C,
+        d0: &T0,
+        d1: &T1,
+    ) -> Result<(), RenderError> {
+        if buf.len() >= 3 {
+            let chan: u8 = (*chan).into();
+            let status = status | chan;
+            for (o, i) in buf.iter_mut().zip(&[status, (*d0).into(), (*d1).into()]) {
+                *o = *i;
+            }
+            Ok(())
+        } else {
+            Err(RenderError::BufferTooShort)
+        }
+    }
+
+    //helper to render 2 byte messages
+    fn chan2byte<T0: Into<u8> + Copy, C: Into<u8> + Copy>(
+        buf: &mut [u8],
+        status: u8,
+        chan: &C,
+        d0: &T0,
+    ) -> Result<(), RenderError> {
+        if buf.len() >= 2 {
+            let chan: u8 = (*chan).into();
+            let status = status | chan;
+            for (o, i) in buf.iter_mut().zip(&[status, (*d0).into()]) {
+                *o = *i;
+            }
+            Ok(())
+        } else {
+            Err(RenderError::BufferTooShort)
+        }
+    }
+
+    //helper to render 1 byte messages
+    fn chan1byte(buf: &mut [u8], status: u8) -> Result<(), RenderError> {
+        if buf.len() >= 1 {
+            buf[0] = status;
+            Ok(())
+        } else {
+            Err(RenderError::BufferTooShort)
+        }
+    }
+
+    /// Render into a raw byte buffer
+    pub fn render(&self, buf: &mut [u8]) -> Result<(), RenderError> {
+        match self {
+            Self::NoteOff(c, n, v) => Self::chan3byte(buf, NOTE_OFF, c, n, v),
+            Self::NoteOn(c, n, v) => Self::chan3byte(buf, NOTE_ON, c, n, v),
+            Self::KeyPressure(c, n, v) => Self::chan3byte(buf, KEY_PRESSURE, c, n, v),
+            Self::ControlChange(c, n, v) => Self::chan3byte(buf, CONTROL_CHANGE, c, n, v),
+            Self::PitchBendChange(c, v) => {
+                let (v0, v1): (u8, u8) = (*v).into();
+                Self::chan3byte(buf, PITCH_BEND_CHANGE, c, &v0, &v1)
+            }
+            Self::SongPositionPointer(v) => {
+                let (v0, v1): (u8, u8) = (*v).into();
+                Self::chan3byte(buf, SONG_POSITION_POINTER, &0, &v0, &v1)
+            }
+            Self::ProgramChange(c, p) => Self::chan2byte(buf, PROGRAM_CHANGE, c, p),
+            Self::ChannelPressure(c, p) => Self::chan2byte(buf, CHANNEL_PRESSURE, c, p),
+            Self::QuarterFrame(q) => Self::chan2byte(buf, QUARTER_FRAME, &0, q),
+            Self::SongSelect(s) => Self::chan2byte(buf, SONG_SELECT, &0, s),
+            Self::TuneRequest => Self::chan1byte(buf, TUNE_REQUEST),
+            Self::TimingClock => Self::chan1byte(buf, TIMING_CLOCK),
+            Self::Start => Self::chan1byte(buf, START),
+            Self::Continue => Self::chan1byte(buf, CONTINUE),
+            Self::Stop => Self::chan1byte(buf, STOP),
+            Self::ActiveSensing => Self::chan1byte(buf, ACTIVE_SENSING),
+            Self::Reset => Self::chan1byte(buf, RESET),
+        }
+    }
 }
 
 /// Represents a midi note number where 0 corresponds to C-2 and 127 corresponds to G8,
