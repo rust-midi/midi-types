@@ -2,4 +2,4 @@
 #[warn(missing_debug_implementations, missing_docs)]
 mod midi;
 
-pub use midi::{Channel, Control, MidiMessage, Note, Program};
+pub use midi::*;
