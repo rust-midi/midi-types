@@ -434,6 +434,7 @@ impl Into<u16> for Value14 {
     }
 }
 
+/*
 /// The SMPTE type used. This indicates the number of frames per second
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum SmpteType {
@@ -479,10 +480,13 @@ pub enum QuarterFrameType {
     /// Combined hours high nibble and smpte type (frames per second)
     HoursMS,
 }
+*/
 
+/// A MIDI Quarter Frame value, used for sync.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct QuarterFrame(u8);
 
+/*
 impl QuarterFrame {
     pub fn frame_type(&self) -> QuarterFrameType {
         unimplemented!()
@@ -496,6 +500,7 @@ impl QuarterFrame {
         unimplemented!()
     }
 }
+*/
 
 impl From<u8> for QuarterFrame {
     fn from(value: u8) -> Self {
