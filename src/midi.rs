@@ -326,8 +326,7 @@ pub struct Note(u8);
 
 impl From<u8> for Note {
     fn from(note: u8) -> Self {
-        assert!(note <= 127);
-        Note(note)
+        Note(note.min(127))
     }
 }
 
@@ -344,8 +343,7 @@ pub struct Channel(u8);
 
 impl From<u8> for Channel {
     fn from(channel: u8) -> Self {
-        assert!(channel <= 15);
-        Channel(channel)
+        Channel(channel.min(15))
     }
 }
 
@@ -361,8 +359,7 @@ pub struct Control(u8);
 
 impl From<u8> for Control {
     fn from(control: u8) -> Self {
-        assert!(control <= 127);
-        Control(control)
+        Control(control.min(127))
     }
 }
 
@@ -395,7 +392,7 @@ pub struct Value7(u8);
 
 impl From<u8> for Value7 {
     fn from(value: u8) -> Self {
-        Value7(value)
+        Value7(value.min(127))
     }
 }
 
@@ -412,7 +409,7 @@ pub struct Value14(u8, u8);
 
 impl From<(u8, u8)> for Value14 {
     fn from(value: (u8, u8)) -> Self {
-        Value14(value.0, value.1)
+        Value14(value.0.min(127), value.1.min(127))
     }
 }
 
@@ -431,6 +428,38 @@ impl From<u16> for Value14 {
 impl Into<u16> for Value14 {
     fn into(self) -> u16 {
         (self.0 as u16) * 128 + self.1 as u16
+    }
+}
+
+///Convert from -8192i16..8191i16
+impl From<i16> for Value14 {
+    fn from(value: i16) -> Self {
+        let value = value.clamp(-8192i16, 8191i16).saturating_add(8192i16) as u16;
+        Self::from(value)
+    }
+}
+
+///Convert into -8192i16..8191i16
+impl Into<i16> for Value14 {
+    fn into(self) -> i16 {
+        let v: u16 = self.into();
+        (v as i16) - 8192i16
+    }
+}
+
+///Convert from -1.0..1.0
+impl From<f32> for Value14 {
+    fn from(value: f32) -> Self {
+        Self::from((value * if value > 0.0 { 8191.0 } else { 8192.0 }) as i16)
+    }
+}
+
+///Convert into -1.0..1.0
+impl Into<f32> for Value14 {
+    fn into(self) -> f32 {
+        let v: i16 = self.into();
+        let v = v as f32 / if v > 0 { 8191.0 } else { 8192.0 };
+        v.clamp(-1.0, 1.0)
     }
 }
 
@@ -504,7 +533,7 @@ impl QuarterFrame {
 
 impl From<u8> for QuarterFrame {
     fn from(value: u8) -> Self {
-        Self(value)
+        Self(value.min(127))
     }
 }
 
@@ -552,6 +581,54 @@ mod test {
     fn should_split_14_bit_val_into_7() {
         let val: Value14 = 0b0011001100110011u16.into();
         assert_eq!((0b01100110u8, 0b00110011u8), val.into())
+    }
+
+    #[test]
+    fn conversion_i16_14() {
+        let val: Value14 = Value14::from(8191i16);
+        assert_eq!((127, 127), val.into());
+        assert_eq!(8191i16, val.into());
+
+        //clamped
+        let val: Value14 = Value14::from(8192i16);
+        assert_eq!((127, 127), val.into());
+        assert_eq!(8191i16, val.into());
+
+        let val: Value14 = Value14::from(8190i16);
+        assert_eq!((127, 126), val.into());
+        assert_eq!(8190i16, val.into());
+
+        let val: Value14 = Value14::from(-8192i16);
+        assert_eq!((0, 0), val.into());
+        assert_eq!(-8192i16, val.into());
+
+        //clamped
+        let val: Value14 = Value14::from(-8193i16);
+        assert_eq!((0, 0), val.into());
+        assert_eq!(-8192i16, val.into());
+
+        let val: Value14 = Value14::from(0i16);
+        assert_eq!((64, 0), val.into());
+        assert_eq!(0i16, val.into());
+
+        let val: Value14 = Value14::from(1i16);
+        assert_eq!((64, 1), val.into());
+        assert_eq!(1i16, val.into());
+    }
+
+    #[test]
+    fn conversion_f32_14() {
+        let val: Value14 = Value14::from(0.0f32);
+        assert_eq!((64, 0), val.into());
+        assert_eq!(0.0f32, val.into());
+
+        let val: Value14 = Value14::from(1.0f32);
+        assert_eq!((127, 127), val.into());
+        assert_eq!(1.0f32, val.into());
+
+        let val: Value14 = Value14::from(-1.0f32);
+        assert_eq!((0, 0), val.into());
+        assert_eq!(-1.0f32, val.into());
     }
 
     #[test]
