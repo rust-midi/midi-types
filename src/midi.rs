@@ -27,6 +27,7 @@ pub mod status {
 
 /// An enum with variants for all possible Midi messages.
 #[derive(Debug, PartialEq, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum MidiMessage {
     // Channel voice messages
     /// Note Off message
@@ -123,6 +124,7 @@ impl MidiMessage {
 /// Represents a midi note number where 0 corresponds to C-2 and 127 corresponds to G8,
 /// C4 is 72
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Note(u8);
 
 impl From<u8> for Note {
@@ -140,6 +142,7 @@ impl Into<u8> for Note {
 /// Represents a Midi channel, Midi channels can range from 0 to 15, but are represented as 1 based
 /// values Channel 1 to 16
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Channel(u8);
 
 impl From<u8> for Channel {
@@ -156,6 +159,7 @@ impl Into<u8> for Channel {
 
 /// A Midi controller number
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Control(u8);
 
 impl From<u8> for Control {
@@ -172,6 +176,7 @@ impl Into<u8> for Control {
 
 /// A Midi program number, these usually correspond to presets on Midi devices
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Program(u8);
 
 impl From<u8> for Program {
@@ -189,6 +194,7 @@ impl Into<u8> for Program {
 
 /// A 7 bit Midi data value stored in an unsigned 8 bit integer, the msb is always 0
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Value7(u8);
 
 impl From<u8> for Value7 {
@@ -206,6 +212,7 @@ impl Into<u8> for Value7 {
 /// A 14 bit Midi value stored as two 7 bit Midi data values, where the msb is always 0 to signify
 /// that this is a data value.
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Value14(u8, u8);
 
 impl From<(u8, u8)> for Value14 {
@@ -267,6 +274,7 @@ impl Into<f32> for Value14 {
 /*
 /// The SMPTE type used. This indicates the number of frames per second
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum SmpteType {
     /// 24 frames per second
     Frames24,
@@ -285,6 +293,7 @@ pub enum SmpteType {
 /// of these eight messages encodes a 4 bit part of the midi time code. As one of these is sent
 /// every quarter frames, the complete midi time code is sent every two frames.
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum QuarterFrameType {
     /// Frame number low nibble
     FramesLS,
@@ -314,6 +323,7 @@ pub enum QuarterFrameType {
 
 /// A MIDI Quarter Frame value, used for sync.
 #[derive(Debug, PartialEq, Copy, Clone)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct QuarterFrame(u8);
 
 /*
