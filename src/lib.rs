@@ -1,5 +1,7 @@
 #![no_std]
 #[warn(missing_debug_implementations, missing_docs)]
-mod midi;
+mod message;
+mod note;
 
-pub use midi::*;
+pub use message::*;
+pub use note::*;
