@@ -181,7 +181,7 @@ pub struct Program(u8);
 
 impl From<u8> for Program {
     fn from(value: u8) -> Self {
-        assert!(value <= 127);
+        debug_assert!(value <= 127);
         Program(value)
     }
 }
