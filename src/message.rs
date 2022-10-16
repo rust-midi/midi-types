@@ -210,7 +210,7 @@ impl Program {
 impl From<u8> for Program {
     fn from(value: u8) -> Self {
         debug_assert!(value <= 127);
-        Program(value)
+        Self::new(value)
     }
 }
 
