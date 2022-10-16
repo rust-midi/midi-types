@@ -1,29 +1,6 @@
 //! This module contains data types to represent the different messages that can be sent over MIDI.
 
-#[allow(missing_docs)]
-/// Status byte constants
-pub mod status {
-    pub const NOTE_OFF: u8 = 0x80;
-    pub const NOTE_ON: u8 = 0x90;
-    pub const KEY_PRESSURE: u8 = 0xA0;
-    pub const CONTROL_CHANGE: u8 = 0xB0;
-    pub const PITCH_BEND_CHANGE: u8 = 0xE0;
-    pub const SONG_POSITION_POINTER: u8 = 0xF2;
-    pub const PROGRAM_CHANGE: u8 = 0xC0;
-    pub const CHANNEL_PRESSURE: u8 = 0xD0;
-    pub const QUARTER_FRAME: u8 = 0xF1;
-    pub const SONG_SELECT: u8 = 0xF3;
-    pub const TUNE_REQUEST: u8 = 0xF6;
-    pub const TIMING_CLOCK: u8 = 0xF8;
-    pub const START: u8 = 0xFA;
-    pub const CONTINUE: u8 = 0xFB;
-    pub const STOP: u8 = 0xFC;
-    pub const ACTIVE_SENSING: u8 = 0xFE;
-    pub const RESET: u8 = 0xFF;
-
-    pub const SYSEX_START: u8 = 0xF0;
-    pub const SYSEX_END: u8 = 0xF7;
-}
+use crate::Note;
 
 /// An enum with variants for all possible Midi messages.
 #[derive(Debug, PartialEq, Clone)]
@@ -121,22 +98,29 @@ impl MidiMessage {
     }
 }
 
-/// Represents a midi note number where 0 corresponds to C-2 and 127 corresponds to G8,
-/// C4 is 72
-#[derive(Debug, PartialEq, Copy, Clone)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-pub struct Note(u8);
+#[allow(missing_docs)]
+/// Status byte constants
+pub mod status {
+    pub const NOTE_OFF: u8 = 0x80;
+    pub const NOTE_ON: u8 = 0x90;
+    pub const KEY_PRESSURE: u8 = 0xA0;
+    pub const CONTROL_CHANGE: u8 = 0xB0;
+    pub const PITCH_BEND_CHANGE: u8 = 0xE0;
+    pub const SONG_POSITION_POINTER: u8 = 0xF2;
+    pub const PROGRAM_CHANGE: u8 = 0xC0;
+    pub const CHANNEL_PRESSURE: u8 = 0xD0;
+    pub const QUARTER_FRAME: u8 = 0xF1;
+    pub const SONG_SELECT: u8 = 0xF3;
+    pub const TUNE_REQUEST: u8 = 0xF6;
+    pub const TIMING_CLOCK: u8 = 0xF8;
+    pub const START: u8 = 0xFA;
+    pub const CONTINUE: u8 = 0xFB;
+    pub const STOP: u8 = 0xFC;
+    pub const ACTIVE_SENSING: u8 = 0xFE;
+    pub const RESET: u8 = 0xFF;
 
-impl From<u8> for Note {
-    fn from(note: u8) -> Self {
-        Note(note.min(127))
-    }
-}
-
-impl Into<u8> for Note {
-    fn into(self) -> u8 {
-        self.0
-    }
+    pub const SYSEX_START: u8 = 0xF0;
+    pub const SYSEX_END: u8 = 0xF7;
 }
 
 /// Represents a Midi channel, Midi channels can range from 0 to 15, but are represented as 1 based
