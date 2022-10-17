@@ -125,7 +125,7 @@ pub mod status {
 
 /// Represents a Midi channel, Midi channels can range from 0 to 15, but are represented as 1 based
 /// values Channel 1 to 16
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Channel(u8);
 
@@ -135,14 +135,14 @@ impl From<u8> for Channel {
     }
 }
 
-impl Into<u8> for Channel {
-    fn into(self) -> u8 {
-        self.0
+impl From<Channel> for u8 {
+    fn from(channel: Channel) -> u8 {
+        channel.0
     }
 }
 
 /// A Midi controller number
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Control(u8);
 
@@ -152,14 +152,14 @@ impl From<u8> for Control {
     }
 }
 
-impl Into<u8> for Control {
-    fn into(self) -> u8 {
-        self.0
+impl From<Control> for u8 {
+    fn from(control: Control) -> u8 {
+        control.0
     }
 }
 
 /// A Midi program number, these usually correspond to presets on Midi devices
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Program(u8);
 
@@ -170,14 +170,14 @@ impl From<u8> for Program {
     }
 }
 
-impl Into<u8> for Program {
-    fn into(self) -> u8 {
-        self.0
+impl From<Program> for u8 {
+    fn from(program: Program) -> u8 {
+        program.0
     }
 }
 
 /// A 7 bit Midi data value stored in an unsigned 8 bit integer, the msb is always 0
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Value7(u8);
 
@@ -187,15 +187,15 @@ impl From<u8> for Value7 {
     }
 }
 
-impl Into<u8> for Value7 {
-    fn into(self) -> u8 {
-        self.0
+impl From<Value7> for u8 {
+    fn from(value: Value7) -> u8 {
+        value.0
     }
 }
 
 /// A 14 bit Midi value stored as two 7 bit Midi data values, where the msb is always 0 to signify
 /// that this is a data value.
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Value14(u8, u8);
 
@@ -205,9 +205,9 @@ impl From<(u8, u8)> for Value14 {
     }
 }
 
-impl Into<(u8, u8)> for Value14 {
-    fn into(self) -> (u8, u8) {
-        (self.0, self.1)
+impl From<Value14> for (u8, u8) {
+    fn from(value: Value14) -> (u8, u8) {
+        (value.0, value.1)
     }
 }
 
@@ -217,9 +217,9 @@ impl From<u16> for Value14 {
     }
 }
 
-impl Into<u16> for Value14 {
-    fn into(self) -> u16 {
-        (self.0 as u16) * 128 + self.1 as u16
+impl From<Value14> for u16 {
+    fn from(value: Value14) -> u16 {
+        (value.0 as u16) * 128 + value.1 as u16
     }
 }
 
@@ -232,9 +232,9 @@ impl From<i16> for Value14 {
 }
 
 ///Convert into -8192i16..8191i16
-impl Into<i16> for Value14 {
-    fn into(self) -> i16 {
-        let v: u16 = self.into();
+impl From<Value14> for i16 {
+    fn from(value: Value14) -> i16 {
+        let v: u16 = value.into();
         (v as i16) - 8192i16
     }
 }
@@ -247,9 +247,9 @@ impl From<f32> for Value14 {
 }
 
 ///Convert into -1.0..1.0
-impl Into<f32> for Value14 {
-    fn into(self) -> f32 {
-        let v: i16 = self.into();
+impl From<Value14> for f32 {
+    fn from(value: Value14) -> f32 {
+        let v: i16 = value.into();
         let v = v as f32 / if v > 0 { 8191.0 } else { 8192.0 };
         v.clamp(-1.0, 1.0)
     }
@@ -306,7 +306,7 @@ pub enum QuarterFrameType {
 */
 
 /// A MIDI Quarter Frame value, used for sync.
-#[derive(Debug, PartialEq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct QuarterFrame(u8);
 
@@ -332,9 +332,9 @@ impl From<u8> for QuarterFrame {
     }
 }
 
-impl Into<u8> for QuarterFrame {
-    fn into(self) -> u8 {
-        self.0
+impl From<QuarterFrame> for u8 {
+    fn from(value: QuarterFrame) -> u8 {
+        value.0
     }
 }
 
