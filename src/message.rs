@@ -145,7 +145,8 @@ impl Channel {
 
 impl From<u8> for Channel {
     fn from(channel: u8) -> Self {
-        Channel(channel.min(15))
+        debug_assert!(channel <= 15);
+        Self::new(channel)
     }
 }
 
@@ -176,7 +177,8 @@ impl Control {
 
 impl From<u8> for Control {
     fn from(control: u8) -> Self {
-        Control(control.min(127))
+        debug_assert!(control <= 127);
+        Self::new(control)
     }
 }
 
@@ -207,7 +209,7 @@ impl Program {
 
 impl From<u8> for Program {
     fn from(value: u8) -> Self {
-        assert!(value <= 127);
+        debug_assert!(value <= 127);
         Program(value)
     }
 }
@@ -239,7 +241,8 @@ impl Value7 {
 
 impl From<u8> for Value7 {
     fn from(value: u8) -> Self {
-        Value7(value.min(127))
+        debug_assert!(value <= 127);
+        Self::new(value)
     }
 }
 
@@ -279,7 +282,9 @@ impl Value14 {
 
 impl From<(u8, u8)> for Value14 {
     fn from(value: (u8, u8)) -> Self {
-        Value14(value.0.min(127), value.1.min(127))
+        debug_assert!(value.0 <= 127);
+        debug_assert!(value.1 <= 127);
+        Self(value.0.min(127), value.1.min(127))
     }
 }
 
@@ -291,7 +296,7 @@ impl From<Value14> for (u8, u8) {
 
 impl From<u16> for Value14 {
     fn from(value: u16) -> Self {
-        Value14(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
+        Self(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
     }
 }
 
@@ -419,7 +424,8 @@ impl QuarterFrame {
 
 impl From<u8> for QuarterFrame {
     fn from(value: u8) -> Self {
-        Self(value.min(127))
+        debug_assert!(value <= 127);
+        Self::new(value)
     }
 }
 
