@@ -268,14 +268,13 @@ impl Value14 {
     /// * The `val` will be clamped so it is in the 0..127 valid range
     ///
     pub const fn new(val: i16) -> Self {
-        let value = if val <= -8192i16 {
+        let value = (if val <= -8192i16 {
             -8192i16
         } else if val >= 8191i16 {
             8191i16
         } else {
             val
-        }
-        .saturating_add(8192i16) as u16;
+        } + 8192i16) as u16;
         Value14(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
     }
 }
