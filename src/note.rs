@@ -6,6 +6,20 @@
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Note(u8);
 
+impl Note {
+    /// Create a new `Note`
+    ///
+    /// # Arguments
+    /// * `val` - the note number value
+    ///
+    /// # Note
+    /// * The `val` will be clamped so it is in the 0..127 valid range
+    ///
+    pub const fn new(val: u8) -> Self {
+        Self(if val > 127 { 127 } else { val })
+    }
+}
+
 impl From<u8> for Note {
     fn from(note: u8) -> Self {
         Note(note.min(127))

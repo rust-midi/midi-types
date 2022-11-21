@@ -129,6 +129,20 @@ pub mod status {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Channel(u8);
 
+impl Channel {
+    /// Create a new `Channel`
+    ///
+    /// # Arguments
+    /// * `val` - the 0 based channel value
+    ///
+    /// # Note
+    /// * The `val` will be clamped so it is in the 0..15 valid range.
+    ///
+    pub const fn new(val: u8) -> Self {
+        Self(if val > 15 { 15 } else { val })
+    }
+}
+
 impl From<u8> for Channel {
     fn from(channel: u8) -> Self {
         Channel(channel.min(15))
@@ -146,6 +160,20 @@ impl From<Channel> for u8 {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Control(u8);
 
+impl Control {
+    /// Create a new `Control`
+    ///
+    /// # Arguments
+    /// * `val` - the control number value
+    ///
+    /// # Note
+    /// * The `val` will be clamped so it is in the 0..127 valid range
+    ///
+    pub const fn new(val: u8) -> Self {
+        Self(if val > 127 { 127 } else { val })
+    }
+}
+
 impl From<u8> for Control {
     fn from(control: u8) -> Self {
         Control(control.min(127))
@@ -162,6 +190,20 @@ impl From<Control> for u8 {
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Program(u8);
+
+impl Program {
+    /// Create a new `Program`
+    ///
+    /// # Arguments
+    /// * `val` - the program number value
+    ///
+    /// # Note
+    /// * The `val` will be clamped so it is in the 0..127 valid range
+    ///
+    pub const fn new(val: u8) -> Self {
+        Self(if val > 127 { 127 } else { val })
+    }
+}
 
 impl From<u8> for Program {
     fn from(value: u8) -> Self {
@@ -181,6 +223,20 @@ impl From<Program> for u8 {
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Value7(u8);
 
+impl Value7 {
+    /// Create a new `Value7`
+    ///
+    /// # Arguments
+    /// * `val` - the value
+    ///
+    /// # Note
+    /// * The `val` will be clamped so it is in the 0..127 valid range
+    ///
+    pub const fn new(val: u8) -> Self {
+        Self(if val > 127 { 127 } else { val })
+    }
+}
+
 impl From<u8> for Value7 {
     fn from(value: u8) -> Self {
         Value7(value.min(127))
@@ -198,6 +254,28 @@ impl From<Value7> for u8 {
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Value14(u8, u8);
+
+impl Value14 {
+    /// Create a new `Value14`
+    ///
+    /// # Arguments
+    /// * `val` - the value
+    ///
+    /// # Note
+    /// * The `val` will be clamped so it is in the 0..127 valid range
+    ///
+    pub const fn new(val: i16) -> Self {
+        let value = if val < -8192i16 {
+            -8192i16
+        } else if val > 8191i16 {
+            8191i16
+        } else {
+            val
+        }
+        .saturating_add(8192i16) as u16;
+        Value14(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
+    }
+}
 
 impl From<(u8, u8)> for Value14 {
     fn from(value: (u8, u8)) -> Self {
@@ -226,8 +304,7 @@ impl From<Value14> for u16 {
 ///Convert from -8192i16..8191i16
 impl From<i16> for Value14 {
     fn from(value: i16) -> Self {
-        let value = value.clamp(-8192i16, 8191i16).saturating_add(8192i16) as u16;
-        Self::from(value)
+        Self::new(value)
     }
 }
 
@@ -359,11 +436,13 @@ mod test {
         let val: Value14 = Value14::from(8191i16);
         assert_eq!((127, 127), val.into());
         assert_eq!(8191i16, val.into());
+        assert_eq!(val, Value14::new(8191i16));
 
         //clamped
         let val: Value14 = Value14::from(8192i16);
         assert_eq!((127, 127), val.into());
         assert_eq!(8191i16, val.into());
+        assert_eq!(val, Value14::new(8192i16));
 
         let val: Value14 = Value14::from(8190i16);
         assert_eq!((127, 126), val.into());
