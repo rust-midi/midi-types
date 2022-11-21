@@ -265,9 +265,9 @@ impl Value14 {
     /// * The `val` will be clamped so it is in the 0..127 valid range
     ///
     pub const fn new(val: i16) -> Self {
-        let value = if val < -8192i16 {
+        let value = if val <= -8192i16 {
             -8192i16
-        } else if val > 8191i16 {
+        } else if val >= 8191i16 {
             8191i16
         } else {
             val
@@ -386,6 +386,20 @@ pub enum QuarterFrameType {
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct QuarterFrame(u8);
+
+impl QuarterFrame {
+    /// Create a new `QuarterFrame`
+    ///
+    /// # Arguments
+    /// * `val` - the value
+    ///
+    /// # Note
+    /// * The `val` will be clamped so it is in the 0..127 valid range
+    ///
+    pub const fn new(val: u8) -> Self {
+        Self(if val > 127 { 127 } else { val })
+    }
+}
 
 /*
 impl QuarterFrame {
