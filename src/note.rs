@@ -22,7 +22,8 @@ impl Note {
 
 impl From<u8> for Note {
     fn from(note: u8) -> Self {
-        Note(note.min(127))
+        debug_assert!(note <= 127);
+        Self::from(note)
     }
 }
 
