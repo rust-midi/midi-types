@@ -1,7 +1,10 @@
 //! The MIDI note type represent midi note numbers
 
-/// Represents a midi note number where 0 corresponds to C-2 and 127 corresponds to G8,
-/// C4 is 72
+/// Represents a midi note number
+///
+/// # Note
+/// * 12-tone english named note constants are calculated with 0 corresponding to C-2 and 127 to
+/// G8, C4 is 72
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Note(u8);
@@ -147,6 +150,11 @@ impl Note {
     pub const Fs8: Self = Self::new(10 * 12 + 6);
     pub const G8: Self = Self::new(10 * 12 + 7);
 
+    /// The minimum note value
+    pub const MIN: Self = Self::C2m;
+    /// The maximum note value
+    pub const MAX: Self = Self::G8;
+
     /// Create a new `Note`
     ///
     /// # Arguments
@@ -157,6 +165,31 @@ impl Note {
     ///
     pub const fn new(val: u8) -> Self {
         Self(if val > 127 { 127 } else { val })
+    }
+
+    /// Create a new `Note` from a name and octave.
+    ///
+    /// # Arguments
+    /// * `name` - The 12-tone english note name
+    /// * `octave` - The octave number, -2..8, C3 = 60
+    ///
+    /// # Note
+    /// * The value will be clamped so it is in the 0..127 valid range
+    ///
+    pub const fn with_name(name: NoteName, octave: i8) -> Self {
+        if octave < -2i8 {
+            Note::MIN
+        } else if octave > 8 {
+            Note::MAX
+        } else {
+            let number = name as u8 + (octave + 2) as u8 * 12;
+
+            if number > 127 {
+                Note::MAX
+            } else {
+                Note::new(number)
+            }
+        }
     }
 }
 
@@ -173,6 +206,7 @@ impl From<Note> for u8 {
     }
 }
 
+/// English 12-tone note names
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[repr(u8)]
@@ -229,31 +263,6 @@ impl From<Note> for (NoteName, i8) {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum MidiConversionError {
-    OutOfBoundsError,
-}
-
-impl TryFrom<(NoteName, i8)> for Note {
-    type Error = MidiConversionError;
-
-    fn try_from(value: (NoteName, i8)) -> Result<Self, Self::Error> {
-        let (name, octave) = value;
-
-        if !(-2i8..=8).contains(&octave) {
-            Err(MidiConversionError::OutOfBoundsError)?
-        }
-
-        let number = name as u8 + (octave + 2) as u8 * 12;
-
-        if number > 127 {
-            Err(MidiConversionError::OutOfBoundsError)?
-        }
-
-        Ok(Note::new(number))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -271,31 +280,34 @@ mod tests {
         assert_eq!(NoteName::G, n);
         assert_eq!(o, 8);
 
-        let note: Result<Note, _> = (NoteName::C, 0).try_into();
-        assert_eq!(Ok(Note::C0), note);
+        assert_eq!(127u8, Note::MAX.into());
+        assert_eq!(0u8, Note::MIN.into());
 
-        let note: Result<Note, _> = (NoteName::Cs, 0).try_into();
-        assert_eq!(Ok(Note::Cs0), note);
+        let note: Note = Note::with_name(NoteName::C, 0);
+        assert_eq!(Note::C0, note);
 
-        let note: Result<Note, _> = (NoteName::C, -1).try_into();
-        assert_eq!(Ok(Note::C1m), note);
+        let note: Note = Note::with_name(NoteName::Cs, 0);
+        assert_eq!(Note::Cs0, note);
 
-        let note: Result<Note, _> = (NoteName::C, -2).try_into();
-        assert_eq!(Ok(Note::C2m), note);
+        let note: Note = Note::with_name(NoteName::C, -1);
+        assert_eq!(Note::C1m, note);
 
-        let note: Result<Note, _> = (NoteName::A, 1).try_into();
-        assert_eq!(Ok(Note::A1), note);
+        let note = Note::with_name(NoteName::C, -2);
+        assert_eq!(Note::C2m, note);
 
-        let note: Result<Note, _> = (NoteName::G, 8).try_into();
-        assert_eq!(Ok(Note::G8), note);
+        let note = Note::with_name(NoteName::A, 1);
+        assert_eq!(Note::A1, note);
 
-        let note: Result<Note, _> = (NoteName::A, 8).try_into();
-        assert_eq!(Err(MidiConversionError::OutOfBoundsError), note);
+        let note = Note::with_name(NoteName::G, 8);
+        assert_eq!(Note::G8, note);
 
-        let note: Result<Note, _> = (NoteName::C, 9).try_into();
-        assert_eq!(Err(MidiConversionError::OutOfBoundsError), note);
+        let note = Note::with_name(NoteName::A, 8);
+        assert_eq!(Note::MAX, note);
 
-        let note: Result<Note, _> = (NoteName::C, -3).try_into();
-        assert_eq!(Err(MidiConversionError::OutOfBoundsError), note);
+        let note = Note::with_name(NoteName::C, 9);
+        assert_eq!(Note::MAX, note);
+
+        let note = Note::with_name(NoteName::C, -3);
+        assert_eq!(Note::MIN, note);
     }
 }
