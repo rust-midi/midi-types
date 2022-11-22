@@ -244,7 +244,7 @@ impl TryFrom<(NoteName, i8)> for Note {
             Err(MidiConversionError::OutOfBoundsError)?
         }
 
-        let number = (name as u8).saturating_add(((octave + 2) as u8) * 12);
+        let number = name as u8 + (octave + 2) as u8 * 12;
 
         if number > 127 {
             Err(MidiConversionError::OutOfBoundsError)?
