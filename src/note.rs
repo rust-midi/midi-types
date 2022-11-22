@@ -166,31 +166,6 @@ impl Note {
     pub const fn new(val: u8) -> Self {
         Self(if val > 127 { 127 } else { val })
     }
-
-    /// Create a new `Note` from a name and octave.
-    ///
-    /// # Arguments
-    /// * `name` - The 12-tone english note name
-    /// * `octave` - The octave number, -2..8, C3 = 60
-    ///
-    /// # Note
-    /// * The value will be clamped so it is in the 0..127 valid range
-    ///
-    pub const fn with_name(name: NoteName, octave: i8) -> Self {
-        if octave < -2i8 {
-            Note::MIN
-        } else if octave > 8 {
-            Note::MAX
-        } else {
-            let number = name as u8 + (octave + 2) as u8 * 12;
-
-            if number > 127 {
-                Note::MAX
-            } else {
-                Note::new(number)
-            }
-        }
-    }
 }
 
 impl From<u8> for Note {
@@ -206,108 +181,14 @@ impl From<Note> for u8 {
     }
 }
 
-/// English 12-tone note names
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-#[cfg_attr(feature = "defmt", derive(defmt::Format))]
-#[repr(u8)]
-pub enum NoteName {
-    C,
-    Cs,
-    D,
-    Ds,
-    E,
-    F,
-    Fs,
-    G,
-    Gs,
-    A,
-    As,
-    B,
-}
-
-impl From<NoteName> for u8 {
-    fn from(value: NoteName) -> Self {
-        value as u8
-    }
-}
-
-#[allow(non_upper_case_globals)]
-impl NoteName {
-    pub const Db: NoteName = NoteName::Cs;
-    pub const Eb: NoteName = NoteName::Ds;
-    pub const Gb: NoteName = NoteName::Fs;
-    pub const Ab: NoteName = NoteName::Gs;
-    pub const Bb: NoteName = NoteName::As;
-}
-
-impl From<Note> for (NoteName, i8) {
-    fn from(note: Note) -> Self {
-        let octave: i8 = note.0 as i8 / 12 - 2;
-        let note_name = match note.0 % 12 {
-            name if name == NoteName::C as u8 => NoteName::C,
-            name if name == NoteName::Cs as u8 => NoteName::Cs,
-            name if name == NoteName::D as u8 => NoteName::D,
-            name if name == NoteName::Ds as u8 => NoteName::Ds,
-            name if name == NoteName::E as u8 => NoteName::E,
-            name if name == NoteName::F as u8 => NoteName::F,
-            name if name == NoteName::Fs as u8 => NoteName::Fs,
-            name if name == NoteName::G as u8 => NoteName::G,
-            name if name == NoteName::Gs as u8 => NoteName::Gs,
-            name if name == NoteName::A as u8 => NoteName::A,
-            name if name == NoteName::As as u8 => NoteName::As,
-            name if name == NoteName::B as u8 => NoteName::B,
-            _ => panic!("This code should be unreachable"), // Out of bound values should not occur because of the %12
-        };
-
-        (note_name, octave)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn note_conv() {
-        let note = Note::C2m;
-        assert_eq!(0u8, note.into());
-        let (n, o): (NoteName, i8) = note.into();
-        assert_eq!(NoteName::C, n);
-        assert_eq!(o, -2);
-
-        let note = Note::G8;
-        assert_eq!(127u8, note.into());
-        let (n, o): (NoteName, i8) = note.into();
-        assert_eq!(NoteName::G, n);
-        assert_eq!(o, 8);
-
+        assert_eq!(127u8, Note::G8.into());
         assert_eq!(127u8, Note::MAX.into());
         assert_eq!(0u8, Note::MIN.into());
-
-        let note: Note = Note::with_name(NoteName::C, 0);
-        assert_eq!(Note::C0, note);
-
-        let note: Note = Note::with_name(NoteName::Cs, 0);
-        assert_eq!(Note::Cs0, note);
-
-        let note: Note = Note::with_name(NoteName::C, -1);
-        assert_eq!(Note::C1m, note);
-
-        let note = Note::with_name(NoteName::C, -2);
-        assert_eq!(Note::C2m, note);
-
-        let note = Note::with_name(NoteName::A, 1);
-        assert_eq!(Note::A1, note);
-
-        let note = Note::with_name(NoteName::G, 8);
-        assert_eq!(Note::G8, note);
-
-        let note = Note::with_name(NoteName::A, 8);
-        assert_eq!(Note::MAX, note);
-
-        let note = Note::with_name(NoteName::C, 9);
-        assert_eq!(Note::MAX, note);
-
-        let note = Note::with_name(NoteName::C, -3);
-        assert_eq!(Note::MIN, note);
+        assert_eq!(0u8, Note::C2m.into());
     }
 }
