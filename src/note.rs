@@ -9,7 +9,7 @@
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Note(u8);
 
-#[allow(non_upper_case_globals)]
+#[allow(non_upper_case_globals, clippy::identity_op, clippy::erasing_op)]
 impl Note {
     pub const C2m: Self = Self::new(0 * 12 + 0);
     pub const Cs2m: Self = Self::new(0 * 12 + 1);
