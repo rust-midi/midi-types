@@ -76,7 +76,7 @@ pub enum MidiMessage {
 impl MidiMessage {
     /// The length of the rendered data, including the status
     #[allow(clippy::len_without_is_empty)]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         match self {
             Self::NoteOff(..)
             | Self::NoteOn(..)
