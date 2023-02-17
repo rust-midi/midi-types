@@ -3,7 +3,7 @@
 use crate::Note;
 
 /// An enum with variants for all possible Midi messages.
-#[derive(Debug, PartialEq, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub enum MidiMessage {
     // Channel voice messages
