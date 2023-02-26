@@ -12,7 +12,7 @@ jobs:
     name: Rust fmt
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -25,10 +25,10 @@ jobs:
           args: --all -- --check
 
   check:
-    name: Check for warnings
+    name: A quick check for warnings
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
@@ -40,6 +40,22 @@ jobs:
         with:
           command: check
 
+  clippy:
+    name: Run clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: set rust options to fail on warnings
+        run: echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -50,7 +66,7 @@ jobs:
           - beta
           - 1.56.0
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
           profile: minimal
