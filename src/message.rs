@@ -142,6 +142,44 @@ impl Channel {
     pub const fn new(val: u8) -> Self {
         Self(if val > 15 { 15 } else { val })
     }
+
+    /// MIDI channel 1
+    pub const C1: Self = Self::new(0);
+    /// MIDI channel 2
+    pub const C2: Self = Self::new(1);
+    /// MIDI channel 3
+    pub const C3: Self = Self::new(2);
+    /// MIDI channel 4
+    pub const C4: Self = Self::new(3);
+    /// MIDI channel 5
+    pub const C5: Self = Self::new(4);
+    /// MIDI channel 6
+    pub const C6: Self = Self::new(5);
+    /// MIDI channel 7
+    pub const C7: Self = Self::new(6);
+    /// MIDI channel 8
+    pub const C8: Self = Self::new(7);
+    /// MIDI channel 9
+    pub const C9: Self = Self::new(8);
+    /// MIDI channel 10
+    pub const C10: Self = Self::new(9);
+    /// MIDI channel 11
+    pub const C11: Self = Self::new(10);
+    /// MIDI channel 12
+    pub const C12: Self = Self::new(11);
+    /// MIDI channel 13
+    pub const C13: Self = Self::new(12);
+    /// MIDI channel 14
+    pub const C14: Self = Self::new(13);
+    /// MIDI channel 15
+    pub const C15: Self = Self::new(14);
+    /// MIDI channel 16
+    pub const C16: Self = Self::new(15);
+
+    /// The minimum MIDI channel
+    pub const MIN: Self = Self::C1;
+    /// The maximum MIDI channel
+    pub const MAX: Self = Self::C16;
 }
 
 impl From<u8> for Channel {
