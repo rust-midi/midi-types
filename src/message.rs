@@ -134,13 +134,14 @@ impl Channel {
     /// Create a new `Channel`
     ///
     /// # Arguments
-    /// * `val` - the 0 based channel value
+    /// * `channel` - the 0 based channel value
     ///
     /// # Note
-    /// * The `val` will be clamped so it is in the 0..15 valid range.
+    /// * The `channel` will be clamped so it is in the 0..15 valid range.
     ///
-    pub const fn new(val: u8) -> Self {
-        Self(if val > 15 { 15 } else { val })
+    pub const fn new(channel: u8) -> Self {
+        debug_assert!(channel <= 15, "Channel exceeds valid range");
+        Self(if channel > 15 { 15 } else { channel })
     }
 
     /// MIDI channel 1
@@ -184,7 +185,6 @@ impl Channel {
 
 impl From<u8> for Channel {
     fn from(channel: u8) -> Self {
-        debug_assert!(channel <= 15);
         Self::new(channel)
     }
 }
@@ -204,19 +204,19 @@ impl Control {
     /// Create a new `Control`
     ///
     /// # Arguments
-    /// * `val` - the control number value
+    /// * `control` - the control number value
     ///
     /// # Note
-    /// * The `val` will be clamped so it is in the 0..127 valid range
+    /// * The `control` number will be clamped so it is in the 0..127 valid range
     ///
-    pub const fn new(val: u8) -> Self {
-        Self(if val > 127 { 127 } else { val })
+    pub const fn new(control: u8) -> Self {
+        debug_assert!(control < 127, "Control exceeds valid range");
+        Self(if control > 127 { 127 } else { control })
     }
 }
 
 impl From<u8> for Control {
     fn from(control: u8) -> Self {
-        debug_assert!(control <= 127);
         Self::new(control)
     }
 }
@@ -236,20 +236,20 @@ impl Program {
     /// Create a new `Program`
     ///
     /// # Arguments
-    /// * `val` - the program number value
+    /// * `program` - the program number value
     ///
     /// # Note
-    /// * The `val` will be clamped so it is in the 0..127 valid range
+    /// * The `program` will be clamped so it is in the 0..127 valid range
     ///
-    pub const fn new(val: u8) -> Self {
-        Self(if val > 127 { 127 } else { val })
+    pub const fn new(program: u8) -> Self {
+        debug_assert!(program < 127, "Program exceeds valid range");
+        Self(if program > 127 { 127 } else { program })
     }
 }
 
 impl From<u8> for Program {
-    fn from(value: u8) -> Self {
-        debug_assert!(value <= 127);
-        Self::new(value)
+    fn from(program: u8) -> Self {
+        Self::new(program)
     }
 }
 
@@ -268,19 +268,19 @@ impl Value7 {
     /// Create a new `Value7`
     ///
     /// # Arguments
-    /// * `val` - the value
+    /// * `value` - the value
     ///
     /// # Note
-    /// * The `val` will be clamped so it is in the 0..127 valid range
+    /// * The `value` will be clamped so it is in the 0..127 valid range
     ///
-    pub const fn new(val: u8) -> Self {
-        Self(if val > 127 { 127 } else { val })
+    pub const fn new(value: u8) -> Self {
+        debug_assert!(value <= 127, "Value7 exceeds valid range");
+        Self(if value > 127 { 127 } else { value })
     }
 }
 
 impl From<u8> for Value7 {
     fn from(value: u8) -> Self {
-        debug_assert!(value <= 127);
         Self::new(value)
     }
 }
@@ -306,23 +306,19 @@ impl Value14 {
     /// # Note
     /// * The `val` will be clamped so it is in the 0..127 valid range
     ///
-    pub const fn new(val: i16) -> Self {
-        let value = (if val <= -8192i16 {
-            -8192i16
-        } else if val >= 8191i16 {
-            8191i16
-        } else {
-            val
-        } + 8192i16) as u16;
-        Value14(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
+    pub const fn new(msb: u8, lsb: u8) -> Self {
+        debug_assert!(msb <= 127, "Value14 msb exceeds valid range");
+        debug_assert!(lsb <= 127, "Value14 lsb exceeds valid range");
+        Value14(
+            if msb >= 127 { 127 } else { msb },
+            if lsb >= 127 { 127 } else { lsb },
+        )
     }
 }
 
 impl From<(u8, u8)> for Value14 {
     fn from(value: (u8, u8)) -> Self {
-        debug_assert!(value.0 <= 127);
-        debug_assert!(value.1 <= 127);
-        Self(value.0.min(127), value.1.min(127))
+        Self::new(value.0, value.1)
     }
 }
 
@@ -334,6 +330,8 @@ impl From<Value14> for (u8, u8) {
 
 impl From<u16> for Value14 {
     fn from(value: u16) -> Self {
+        debug_assert!(value <= 17000, "Value14 exceeds valid range");
+        let value = if value > 17000 { 17000 } else { value };
         Self(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
     }
 }
@@ -347,7 +345,16 @@ impl From<Value14> for u16 {
 ///Convert from -8192i16..8191i16
 impl From<i16> for Value14 {
     fn from(value: i16) -> Self {
-        Self::new(value)
+        debug_assert!(value >= -8192, "Value14 exceeds valid range");
+        debug_assert!(value <= 8191, "Value14 exceeds valid range");
+        let value = (if value < -8192 {
+            -8192
+        } else if value > 8191 {
+            8191
+        } else {
+            value
+        } + 8192) as u16;
+        Value14::new(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
     }
 }
 
@@ -355,7 +362,7 @@ impl From<i16> for Value14 {
 impl From<Value14> for i16 {
     fn from(value: Value14) -> i16 {
         let v: u16 = value.into();
-        (v as i16) - 8192i16
+        (v as i16) - 8192
     }
 }
 
@@ -434,13 +441,14 @@ impl QuarterFrame {
     /// Create a new `QuarterFrame`
     ///
     /// # Arguments
-    /// * `val` - the value
+    /// * `frame` - the value
     ///
     /// # Note
-    /// * The `val` will be clamped so it is in the 0..127 valid range
+    /// * The `frame` will be clamped so it is in the 0..127 valid range
     ///
-    pub const fn new(val: u8) -> Self {
-        Self(if val > 127 { 127 } else { val })
+    pub const fn new(frame: u8) -> Self {
+        debug_assert!(frame <= 127, "QuarterFrame exceeds valid range");
+        Self(if frame > 127 { 127 } else { frame })
     }
 }
 
@@ -461,9 +469,8 @@ impl QuarterFrame {
 */
 
 impl From<u8> for QuarterFrame {
-    fn from(value: u8) -> Self {
-        debug_assert!(value <= 127);
-        Self::new(value)
+    fn from(frame: u8) -> Self {
+        Self::new(frame)
     }
 }
 
@@ -479,14 +486,9 @@ mod test {
 
     #[test]
     fn should_combine_7_bit_vals_into_14() {
-        let val: Value14 = (0b01010101u8, 0b01010101u8).into();
-        assert_eq!(0b0010101011010101u16, val.into());
-    }
-
-    #[test]
-    fn should_split_14_bit_val_into_7() {
-        let val: Value14 = 0b0011001100110011u16.into();
-        assert_eq!((0b01100110u8, 0b00110011u8), val.into())
+        let val = Value14::new(0b01010101u8, 0b01010111u8);
+        assert_eq!(0b0010101011010111u16, val.into());
+        assert_eq!((0b01010101u8, 0b01010111u8), val.into())
     }
 
     #[test]
@@ -513,24 +515,13 @@ mod test {
         let val: Value14 = Value14::from(8191i16);
         assert_eq!((127, 127), val.into());
         assert_eq!(8191i16, val.into());
-        assert_eq!(val, Value14::new(8191i16));
-
-        //clamped
-        let val: Value14 = Value14::from(8192i16);
-        assert_eq!((127, 127), val.into());
-        assert_eq!(8191i16, val.into());
-        assert_eq!(val, Value14::new(8192i16));
+        assert_eq!(val, Value14::new(127, 127));
 
         let val: Value14 = Value14::from(8190i16);
         assert_eq!((127, 126), val.into());
         assert_eq!(8190i16, val.into());
 
         let val: Value14 = Value14::from(-8192i16);
-        assert_eq!((0, 0), val.into());
-        assert_eq!(-8192i16, val.into());
-
-        //clamped
-        let val: Value14 = Value14::from(-8193i16);
         assert_eq!((0, 0), val.into());
         assert_eq!(-8192i16, val.into());
 
