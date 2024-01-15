@@ -340,7 +340,7 @@ impl From<u16> for Value14 {
 
 impl From<Value14> for u16 {
     fn from(value: Value14) -> u16 {
-        (value.0 as u16) * 128 + value.1 as u16
+        ((value.0 as u16) << 7) + value.1 as u16
     }
 }
 
@@ -487,6 +487,25 @@ mod test {
     fn should_split_14_bit_val_into_7() {
         let val: Value14 = 0b0011001100110011u16.into();
         assert_eq!((0b01100110u8, 0b00110011u8), val.into())
+    }
+
+    #[test]
+    fn conversion_u16_14() {
+        let val: Value14 = Value14::from(16383u16);
+        assert_eq!((127, 127), val.into());
+        assert_eq!(16383u16, val.into());
+
+        let val: Value14 = Value14::from(16256u16);
+        assert_eq!((127, 0), val.into());
+        assert_eq!(16256u16, val.into());
+
+        let val: Value14 = Value14::from(127u16);
+        assert_eq!((0, 127), val.into());
+        assert_eq!(127u16, val.into());
+
+        let val: Value14 = Value14::from(0u16);
+        assert_eq!((0, 0), val.into());
+        assert_eq!(0u16, val.into());
     }
 
     #[test]
