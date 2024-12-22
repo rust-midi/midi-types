@@ -29,18 +29,17 @@ pub enum MidiMessage {
     PitchBendChange(Channel, Value14),
 
     // System common messages
-    /// System exclusive message starts
+    // /// System exclusive message starts
     // SystemExclusive {
     //     /// The system exclusive manufacturer id, this is either a 1 byte or 3 byte number
     //     manufacturer_id: u32,
     // },
 
-    /// System exclusive data is received
+    // /// System exclusive data is received
     // SystemExclusiveData (Value7),
 
-    /// Signals the end of the system exclusive block
+    // /// Signals the end of the system exclusive block
     // EndOfExclusive,
-
     /// Midi time code quarter frame
     QuarterFrame(QuarterFrame),
 

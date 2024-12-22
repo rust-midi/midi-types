@@ -4,7 +4,7 @@
 ///
 /// # Note
 /// * 12-tone english named note constants are calculated with 0 corresponding to C-2 and 127 to
-/// G8, C4 is 72
+///   G8, C4 is 72
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Note(u8);
