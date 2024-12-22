@@ -330,8 +330,8 @@ impl From<Value14> for (u8, u8) {
 
 impl From<u16> for Value14 {
     fn from(value: u16) -> Self {
-        debug_assert!(value <= 17000, "Value14 exceeds valid range");
-        let value = if value > 17000 { 17000 } else { value };
+        debug_assert!(value <= 16383, "Value14 exceeds valid range");
+        let value = if value > 16383 { 16383 } else { value };
         Self(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
     }
 }
@@ -347,13 +347,7 @@ impl From<i16> for Value14 {
     fn from(value: i16) -> Self {
         debug_assert!(value >= -8192, "Value14 exceeds valid range");
         debug_assert!(value <= 8191, "Value14 exceeds valid range");
-        let value = (if value < -8192 {
-            -8192
-        } else if value > 8191 {
-            8191
-        } else {
-            value
-        } + 8192) as u16;
+        let value = value.clamp(-8192, 8191) + 8192;
         Value14::new(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
     }
 }
