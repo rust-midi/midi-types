@@ -1,8 +1,8 @@
 [package]
 name = "midi-types"
 version = "0.2.0"
-edition = "2021"
-rust-version = "1.62.1"
+edition = "2024"
+rust-version = "1.85.0"
 
 authors = [
     "Mendelt Siebenga <msiebenga@gmail.com>",
@@ -16,4 +16,4 @@ keywords = ["midi"]
 readme = "README.md"
 
 [dependencies]
-defmt = { version = "0.3.2", optional = true }
+defmt = { version = "0.3.10", optional = true }
