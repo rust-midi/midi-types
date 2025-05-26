@@ -13,7 +13,7 @@ pub enum MidiMessage {
     /// Note on message
     NoteOn(Channel, Note, Value7),
 
-    /// KeyPressure message for polyphonic aftertouch
+    /// Key pressure message for polyphonic aftertouch
     KeyPressure(Channel, Note, Value7),
 
     /// Control change message
@@ -75,6 +75,7 @@ pub enum MidiMessage {
 impl MidiMessage {
     /// The length of the rendered data, including the status
     #[allow(clippy::len_without_is_empty)]
+    #[must_use]
     pub const fn len(&self) -> usize {
         match self {
             Self::NoteOff(..)
@@ -137,7 +138,7 @@ impl Channel {
     ///
     /// # Note
     /// * The `channel` will be clamped so it is in the 0..15 valid range.
-    ///
+    #[must_use]
     pub const fn new(channel: u8) -> Self {
         debug_assert!(channel <= 15, "Channel exceeds valid range");
         Self(if channel > 15 { 15 } else { channel })
@@ -189,7 +190,7 @@ impl From<u8> for Channel {
 }
 
 impl From<Channel> for u8 {
-    fn from(channel: Channel) -> u8 {
+    fn from(channel: Channel) -> Self {
         channel.0
     }
 }
@@ -207,7 +208,7 @@ impl Control {
     ///
     /// # Note
     /// * The `control` number will be clamped so it is in the 0..127 valid range
-    ///
+    #[must_use]
     pub const fn new(control: u8) -> Self {
         debug_assert!(control < 127, "Control exceeds valid range");
         Self(if control > 127 { 127 } else { control })
@@ -221,7 +222,7 @@ impl From<u8> for Control {
 }
 
 impl From<Control> for u8 {
-    fn from(control: Control) -> u8 {
+    fn from(control: Control) -> Self {
         control.0
     }
 }
@@ -239,7 +240,7 @@ impl Program {
     ///
     /// # Note
     /// * The `program` will be clamped so it is in the 0..127 valid range
-    ///
+    #[must_use]
     pub const fn new(program: u8) -> Self {
         debug_assert!(program < 127, "Program exceeds valid range");
         Self(if program > 127 { 127 } else { program })
@@ -253,7 +254,7 @@ impl From<u8> for Program {
 }
 
 impl From<Program> for u8 {
-    fn from(program: Program) -> u8 {
+    fn from(program: Program) -> Self {
         program.0
     }
 }
@@ -271,7 +272,7 @@ impl Value7 {
     ///
     /// # Note
     /// * The `value` will be clamped so it is in the 0..127 valid range
-    ///
+    #[must_use]
     pub const fn new(value: u8) -> Self {
         debug_assert!(value <= 127, "Value7 exceeds valid range");
         Self(if value > 127 { 127 } else { value })
@@ -285,7 +286,7 @@ impl From<u8> for Value7 {
 }
 
 impl From<Value7> for u8 {
-    fn from(value: Value7) -> u8 {
+    fn from(value: Value7) -> Self {
         value.0
     }
 }
@@ -304,11 +305,11 @@ impl Value14 {
     ///
     /// # Note
     /// * The `val` will be clamped so it is in the 0..127 valid range
-    ///
+    #[must_use]
     pub const fn new(msb: u8, lsb: u8) -> Self {
         debug_assert!(msb <= 127, "Value14 msb exceeds valid range");
         debug_assert!(lsb <= 127, "Value14 lsb exceeds valid range");
-        Value14(
+        Self(
             if msb >= 127 { 127 } else { msb },
             if lsb >= 127 { 127 } else { lsb },
         )
@@ -336,31 +337,34 @@ impl From<u16> for Value14 {
 }
 
 impl From<Value14> for u16 {
-    fn from(value: Value14) -> u16 {
-        ((value.0 as u16) << 7) + value.1 as u16
+    fn from(value: Value14) -> Self {
+        (Self::from(value.0) << 7) + Self::from(value.1)
     }
 }
 
 ///Convert from -8192i16..8191i16
 impl From<i16> for Value14 {
+    #[allow(clippy::cast_sign_loss)]
     fn from(value: i16) -> Self {
         debug_assert!(value >= -8192, "Value14 exceeds valid range");
         debug_assert!(value <= 8191, "Value14 exceeds valid range");
         let value = value.clamp(-8192, 8191) + 8192;
-        Value14::new(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
+        Self::new(((value & 0x3f80) >> 7) as u8, (value & 0x007f) as u8)
     }
 }
 
 ///Convert into -8192i16..8191i16
 impl From<Value14> for i16 {
-    fn from(value: Value14) -> i16 {
+    #[allow(clippy::cast_possible_wrap)]
+    fn from(value: Value14) -> Self {
         let v: u16 = value.into();
-        (v as i16) - 8192
+        (v as Self) - 8192
     }
 }
 
 ///Convert from -1.0..1.0
 impl From<f32> for Value14 {
+    #[allow(clippy::cast_possible_truncation)]
     fn from(value: f32) -> Self {
         Self::from((value * if value > 0.0 { 8191.0 } else { 8192.0 }) as i16)
     }
@@ -368,9 +372,9 @@ impl From<f32> for Value14 {
 
 ///Convert into -1.0..1.0
 impl From<Value14> for f32 {
-    fn from(value: Value14) -> f32 {
+    fn from(value: Value14) -> Self {
         let v: i16 = value.into();
-        let v = v as f32 / if v > 0 { 8191.0 } else { 8192.0 };
+        let v = Self::from(v) / if v > 0 { 8191.0 } else { 8192.0 };
         v.clamp(-1.0, 1.0)
     }
 }
@@ -438,7 +442,7 @@ impl QuarterFrame {
     ///
     /// # Note
     /// * The `frame` will be clamped so it is in the 0..127 valid range
-    ///
+    #[must_use]
     pub const fn new(frame: u8) -> Self {
         debug_assert!(frame <= 127, "QuarterFrame exceeds valid range");
         Self(if frame > 127 { 127 } else { frame })
@@ -468,7 +472,7 @@ impl From<u8> for QuarterFrame {
 }
 
 impl From<QuarterFrame> for u8 {
-    fn from(value: QuarterFrame) -> u8 {
+    fn from(value: QuarterFrame) -> Self {
         value.0
     }
 }

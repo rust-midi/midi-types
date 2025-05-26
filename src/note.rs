@@ -9,7 +9,12 @@
 #[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Note(u8);
 
-#[allow(non_upper_case_globals, clippy::identity_op, clippy::erasing_op)]
+#[allow(
+    non_upper_case_globals,
+    missing_docs,
+    clippy::identity_op,
+    clippy::erasing_op
+)]
 impl Note {
     pub const C2m: Self = Self::new(0 * 12 + 0);
     pub const Cs2m: Self = Self::new(0 * 12 + 1);
@@ -162,7 +167,7 @@ impl Note {
     ///
     /// # Note
     /// * The `val` will be clamped so it is in the 0..127 valid range
-    ///
+    #[must_use]
     pub const fn new(val: u8) -> Self {
         Self(if val > 127 { 127 } else { val })
     }
