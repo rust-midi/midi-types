@@ -483,9 +483,9 @@ mod test {
 
     #[test]
     fn should_combine_7_bit_vals_into_14() {
-        let val = Value14::new(0b01010101u8, 0b01010111u8);
-        assert_eq!(0b0010101011010111u16, val.into());
-        assert_eq!((0b01010101u8, 0b01010111u8), val.into())
+        let val = Value14::new(0b0101_0101u8, 0b0101_0111u8);
+        assert_eq!(0b0010_1010_1101_0111u16, val.into());
+        assert_eq!((0b0101_0101u8, 0b0101_0111u8), val.into());
     }
 
     #[test]
@@ -532,6 +532,7 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn conversion_f32_14() {
         let val: Value14 = Value14::from(0.0f32);
         assert_eq!((64, 0), val.into());
