@@ -210,7 +210,7 @@ impl Control {
     /// * The `control` number will be clamped so it is in the 0..127 valid range
     #[must_use]
     pub const fn new(control: u8) -> Self {
-        debug_assert!(control < 127, "Control exceeds valid range");
+        debug_assert!(control <= 127, "Control exceeds valid range");
         Self(if control > 127 { 127 } else { control })
     }
 }
@@ -242,7 +242,7 @@ impl Program {
     /// * The `program` will be clamped so it is in the 0..127 valid range
     #[must_use]
     pub const fn new(program: u8) -> Self {
-        debug_assert!(program < 127, "Program exceeds valid range");
+        debug_assert!(program <= 127, "Program exceeds valid range");
         Self(if program > 127 { 127 } else { program })
     }
 }
